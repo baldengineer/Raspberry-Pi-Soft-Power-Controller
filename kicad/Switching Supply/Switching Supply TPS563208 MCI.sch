@@ -1,0 +1,270 @@
+EESchema Schematic File Version 2
+LIBS:power
+LIBS:device
+LIBS:transistors
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:cmos4000
+LIBS:adc-dac
+LIBS:memory
+LIBS:xilinx
+LIBS:microcontrollers
+LIBS:dsp
+LIBS:microchip
+LIBS:analog_switches
+LIBS:motorola
+LIBS:texas
+LIBS:intel
+LIBS:audio
+LIBS:interface
+LIBS:digital-audio
+LIBS:philips
+LIBS:display
+LIBS:cypress
+LIBS:siliconi
+LIBS:opto
+LIBS:atmel
+LIBS:contrib
+LIBS:valves
+EELAYER 25 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L R R2
+U 1 1 58EC264C
+P 6850 4700
+F 0 "R2" V 6930 4700 50  0000 C CNN
+F 1 "10k" V 6850 4700 50  0000 C CNN
+F 2 "Resistors_SMD:R_0402" V 6780 4700 50  0001 C CNN
+F 3 "" H 6850 4700 50  0001 C CNN
+	1    6850 4700
+	1    0    0    -1  
+$EndComp
+$Comp
+L TPS563200 U1
+U 1 1 58EC26BA
+P 5550 4300
+F 0 "U1" H 5250 4550 50  0000 L CNN
+F 1 "TPS563200" H 5450 4550 50  0000 L CNN
+F 2 "TO_SOT_Packages_SMD:SOT-23-6" H 5950 4550 50  0001 L CNN
+F 3 "http://www.ti.com/lit/ds/symlink/tps563208.pdf" H 5550 4300 50  0001 C CNN
+F 4 "595-TPS563208DDCT" H 5550 4300 60  0001 C CNN "Mouser-PN"
+	1    5550 4300
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R1
+U 1 1 58EC2802
+P 6850 4350
+F 0 "R1" V 6930 4350 50  0000 C CNN
+F 1 "55k" V 6850 4350 50  0000 C CNN
+F 2 "Resistors_SMD:R_0402" V 6780 4350 50  0001 C CNN
+F 3 "" H 6850 4350 50  0001 C CNN
+	1    6850 4350
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C1
+U 1 1 58EC2860
+P 4800 4350
+F 0 "C1" H 4825 4450 50  0000 L CNN
+F 1 "10uF" H 4825 4250 50  0000 L CNN
+F 2 "Capacitors_SMD:C_0805_HandSoldering" H 4838 4200 50  0001 C CNN
+F 3 "" H 4800 4350 50  0001 C CNN
+	1    4800 4350
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C2
+U 1 1 58EC28A3
+P 6200 4300
+F 0 "C2" H 6225 4400 50  0000 L CNN
+F 1 "100nF" H 6225 4200 50  0000 L CNN
+F 2 "Capacitors_SMD:C_0805_HandSoldering" H 6238 4150 50  0001 C CNN
+F 3 "" H 6200 4300 50  0001 C CNN
+	1    6200 4300
+	0    1    1    0   
+$EndComp
+$Comp
+L L L-KEMET1
+U 1 1 58EC295C
+P 6550 4200
+F 0 "L-KEMET1" V 6500 4200 50  0000 C CNN
+F 1 "33uH" V 6625 4200 50  0000 C CNN
+F 2 "My Libraries:KT-MPLCH-0740-Hand" H 6550 4200 50  0001 C CNN
+F 3 "http://www.mouser.com/ds/2/400/nductor_commercial_power_vlp8040_en-952627.pdf" H 6550 4200 50  0001 C CNN
+	1    6550 4200
+	0    -1   -1   0   
+$EndComp
+$Comp
+L C C3
+U 1 1 58EC29EF
+P 7350 4350
+F 0 "C3" H 7375 4450 50  0000 L CNN
+F 1 "47uF" H 7375 4250 50  0000 L CNN
+F 2 "Capacitors_SMD:C_1206_HandSoldering" H 7388 4200 50  0001 C CNN
+F 3 "" H 7350 4350 50  0001 C CNN
+	1    7350 4350
+	-1   0    0    1   
+$EndComp
+$Comp
+L CONN_01X02 J1
+U 1 1 58EC31C8
+P 4150 4250
+F 0 "J1" H 4150 4400 50  0000 C CNN
+F 1 "9V-IN" V 4250 4250 50  0000 C CNN
+F 2 "freetronics_footprints:1X02" H 4150 4250 50  0001 C CNN
+F 3 "" H 4150 4250 50  0001 C CNN
+	1    4150 4250
+	-1   0    0    1   
+$EndComp
+$Comp
+L CONN_01X02 J3
+U 1 1 58EC3224
+P 8000 4250
+F 0 "J3" H 8000 4400 50  0000 C CNN
+F 1 "5V-OUT" V 8100 4250 50  0000 C CNN
+F 2 "freetronics_footprints:1X02" H 8000 4250 50  0001 C CNN
+F 3 "" H 8000 4250 50  0001 C CNN
+	1    8000 4250
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR1
+U 1 1 58EC32EB
+P 4350 4300
+F 0 "#PWR1" H 4350 4050 50  0001 C CNN
+F 1 "GND" H 4350 4150 50  0000 C CNN
+F 2 "" H 4350 4300 50  0001 C CNN
+F 3 "" H 4350 4300 50  0001 C CNN
+	1    4350 4300
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR3
+U 1 1 58EC3321
+P 4800 4500
+F 0 "#PWR3" H 4800 4250 50  0001 C CNN
+F 1 "GND" H 4800 4350 50  0000 C CNN
+F 2 "" H 4800 4500 50  0001 C CNN
+F 3 "" H 4800 4500 50  0001 C CNN
+	1    4800 4500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR4
+U 1 1 58EC3350
+P 5550 4600
+F 0 "#PWR4" H 5550 4350 50  0001 C CNN
+F 1 "GND" H 5550 4450 50  0000 C CNN
+F 2 "" H 5550 4600 50  0001 C CNN
+F 3 "" H 5550 4600 50  0001 C CNN
+	1    5550 4600
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR5
+U 1 1 58EC337F
+P 6850 4850
+F 0 "#PWR5" H 6850 4600 50  0001 C CNN
+F 1 "GND" H 6850 4700 50  0000 C CNN
+F 2 "" H 6850 4850 50  0001 C CNN
+F 3 "" H 6850 4850 50  0001 C CNN
+	1    6850 4850
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR6
+U 1 1 58EC33DD
+P 7350 4500
+F 0 "#PWR6" H 7350 4250 50  0001 C CNN
+F 1 "GND" H 7350 4350 50  0000 C CNN
+F 2 "" H 7350 4500 50  0001 C CNN
+F 3 "" H 7350 4500 50  0001 C CNN
+	1    7350 4500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR7
+U 1 1 58EC340C
+P 7800 4300
+F 0 "#PWR7" H 7800 4050 50  0001 C CNN
+F 1 "GND" H 7800 4150 50  0000 C CNN
+F 2 "" H 7800 4300 50  0001 C CNN
+F 3 "" H 7800 4300 50  0001 C CNN
+	1    7800 4300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6700 4200 7800 4200
+Connection ~ 7350 4200
+Wire Wire Line
+	6850 4500 6850 4550
+Wire Wire Line
+	6850 4550 6000 4550
+Wire Wire Line
+	5950 4200 6400 4200
+Wire Wire Line
+	6050 4300 5950 4300
+Wire Wire Line
+	6350 4300 6350 4200
+Connection ~ 6350 4200
+Connection ~ 6850 4200
+Wire Wire Line
+	6000 4550 6000 4400
+Wire Wire Line
+	6000 4400 5950 4400
+Connection ~ 6850 4550
+Wire Wire Line
+	4350 4200 5150 4200
+$Comp
+L CONN_01X02 J2
+U 1 1 58EC357C
+P 4150 4900
+F 0 "J2" H 4150 5050 50  0000 C CNN
+F 1 "EN" V 4250 4900 50  0000 C CNN
+F 2 "freetronics_footprints:1X02" H 4150 4900 50  0001 C CNN
+F 3 "" H 4150 4900 50  0001 C CNN
+	1    4150 4900
+	-1   0    0    1   
+$EndComp
+$Comp
+L GND #PWR2
+U 1 1 58EC3622
+P 4350 4950
+F 0 "#PWR2" H 4350 4700 50  0001 C CNN
+F 1 "GND" H 4350 4800 50  0000 C CNN
+F 2 "" H 4350 4950 50  0001 C CNN
+F 3 "" H 4350 4950 50  0001 C CNN
+	1    4350 4950
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5100 4400 5100 4850
+Wire Wire Line
+	5100 4400 5150 4400
+Connection ~ 4800 4200
+Text Label 6000 4200 0    60   ~ 0
+ToCoil
+Text Label 7000 4200 0    60   ~ 0
+OUT
+Text Label 4950 4200 0    60   ~ 0
+IN
+Text Label 4550 4850 0    60   ~ 0
+ENABLE
+Wire Wire Line
+	5100 4850 4350 4850
+$EndSCHEMATC
