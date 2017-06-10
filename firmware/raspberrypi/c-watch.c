@@ -1,17 +1,29 @@
 /* See notes on bottom */
 
 #include <wiringPi.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <linux/reboot.h>
 
-int ioPin = 1; // GPIO18`
+int ioPin = 7; // GPIO04, physical pin 7
 
 int main (void) {
-        wiringPiSetup ();
-        pinMode (ioPin, OUTPUT);
-
-        digitalWrite (ioPin, HIGH);
-        delay (1000);
-
-        return 0;
+	wiringPiSetup ();
+	pinMode (ioPin, INPUT);
+	printf("c-watch v0 is now running.\n");
+	while(1) {
+		pullUpDnControl(ioPin, PUD_DOWN);
+		if (!digitalRead(ioPin)) {
+			printf("LOW\n");
+			break;
+		}
+		delay(1000);
+	}
+	printf("Got signal, starting shutdown.\n");
+	// Would like to change to dbus at some point
+	system("shutdown -P now");
+	delay(500);
+	return 0;
 }
 
 /*
@@ -19,9 +31,9 @@ Install the wiringpi library on your Pi (it may already have a version)
 # apt-get install wiringPi
 
 And then compile this code
-# gcc c-start.c -o c-start -lwiringPi
-copy it to /usr/local/bin
-You need to use systemd and install "powercontrol-coms.service"
+# gcc c-watch.c -o c-watch -lwiringPi
+copy it (using sudo) to /usr/local/sbin
+You need to use systemd and install "shutdown-gpio.service"
 
 WiringPi has it's own numbering convention. So I made this table to 
 be a quick look up for pin numbers. You can also run "gpio readall" 

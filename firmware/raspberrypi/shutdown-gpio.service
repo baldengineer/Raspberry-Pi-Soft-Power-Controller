@@ -1,0 +1,18 @@
+# Put this file in /etc/systemd/system
+# then run sudo systemctl enable shutdown-gpio.service
+# on startup this will call /usr/local/sbin/c-watch and
+# check once per second if the controller gave us the powerdown
+# signal. Then forces a reboot.
+
+[Unit]
+Description=Watch GPIO pin for when to shutdown
+Before=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/c-watch
+ExecStop=/bin/true
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
