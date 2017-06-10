@@ -1,260 +1,261 @@
-// Designed with a Custom 32u4 based board
-// which is based on Arduino Leonardo
-// but any 8-bit AVR would work
+//retropie-pwr-cntrl-v4.ino
+// This code expects a SPST slide switch
+// For more information, visit baldengineer.com and search "SNES"
+// Code is still a work in progress
 
-// I named pins wrong on my custom controller, so comments
-// were to help re-map what went where. Pin assignments
-// should follow Arduino Leonardo Board Pinouts
-const byte offButton = 3;       //PD0 is SCL
+const byte signalFromPi = 3;  //PD0 is SCL
+//const byte switchSense = 7;
 const byte switchSense = A2;    //PF5
-const byte offSignalPath = A3;  //PF4 Verify: no additional Z, adc 4 on 32u4
+const byte offSignalPath = A3; //PF4 Verify: no additional Z, adc 4 on 32u4
 const byte heartBeatLED = 6;  
-const byte frontLED = A4;       // PF1 /
-const byte extraA0 = A0;        // PF7, Mine: A5 - Actually A0
-const byte extraA1 = A1;        // PF6, Mine: A4 - Actually A1
-const byte loadEnable = A1;     // The Pi's Supply's Enable!
-const byte switchLED = A0;      // PD6
+const byte debugLED = 12;
+const byte frontLED = A4;       // PF1 
+const byte signalToPi = A5;// PF0 (is HeartBeat on Pi)
+const byte extraA1 = A1;  // PF6, Mine: A4 - Actually A1
+//const byte extraA0 = A0;  // PF7, Mine: A5 - Actually A0
+const byte loadEnable = A1; // The Pi!
+const byte switchLED = A0; // PD6
 
-#define SWON true
-#define SWOFF false
-
-// Original prototype used a LDO with an inverted enable. 
-// Kept these to make it easy to change active signal
 #define enableON HIGH
 #define enableOFF LOW
 
 unsigned long previousOFFSignalCount = millis();
 unsigned long previousOFFSignalInterval = 1000;
 
-// Serial monitor throttle (debugging)
-unsigned long previousStatePrintMillis = millis();
-unsigned long previousStataPrintInterval = 1000;
-
-// Blinking LED. Helps debug state machine
 unsigned long heartBeatPreviousMillis = millis();
 unsigned long heartBeatInterval = 500;
 bool heartBeatState = true;
 
-// Time to keep Pi on, after receiving "shutdown" signal
 unsigned long timerOffPreviousMillis = millis();
 unsigned long timerOffInterval = 15000; 
 
-// Time to keep LDO on, after Pi is off. (Needed? I dunno)
 unsigned long capDrainPreviousMillis = millis();
 unsigned long capDrainInterval = 1000; 
 
-bool previousButtonState = SWOFF;
-bool previousPiSignalState = HIGH;
+unsigned long forcePowerOff = millis();
+unsigned long forcePowerOffInterval = 45000UL; 
+bool forcePowerOffState = false;
 
-enum powerStates {
-	POWER_OFF,		   // turn off all regulators
-	SWITCH_ON,         // switch moved to ON position
-	SWITCH_OFF,        // switch moved to OFF position
-	TELL_PI_GO_OFF,	   // communicate to Pi is time to shutdown
-	WAIT_FOR_PI,	   // ready for Pi to let us shut down
-	SWITCH_CHANGE,     // switch changed state
-	PISIGNAL_CHANGE,   // the Pi changed its mind
-	START_OFF_TIMER,   // start countdown to off
-	COUNTING_TO_OFF,    // start counting
-	SHUTDOWN 			// drain the cap 
+bool currentButtonState;
+bool previousButtonState;
+
+bool currentPiSignalState;
+bool previousPiSignalState;
+
+enum controllerStates {
+	POWER_UP,
+	BOOTING_PI,
+	BOOTED,
+	SHUT_DOWN_PI,
+	POWER_DOWN
 };
+enum controllerStates controllerState = POWER_UP;
+enum controllerStates previousControllerState = controllerState;
 
-enum powerStates powerState = POWER_OFF;
-enum powerStates previousState = powerState;
+/*enum piPowerStates {
+	OFF,
+	BOOTING,
+	BOOTED,
+	SHUTTING_DOWN,
+	KILLED
+};
+enum piPowerStates piPowerState = OFF;
+enum piPowerStates previousPiPowerState = OFF; */
+
+/*enum pwrButtonStates {
+	UNKNOWN,
+	SW_OFF,
+	SW_ON,
+	CHANGED
+};
+enum pwrButtonStates pwrButtonState = UNKNOWN;
+enum pwrButtonStates previousPwrButtonState = UNKNOWN;*/
+
 
 void setup() {
-	Serial.begin(9600);
+	Serial.begin(9600);	// debugging 
+	pinMode(debugLED, OUTPUT);
+
+	pinMode(offSignalPath, INPUT);
 
 	pinMode(heartBeatLED, OUTPUT);
 	pinMode(switchSense, INPUT);
-	
-	// keep off path in High-Z until hold-up
-	// cap is fully charged
-	pinMode(offSignalPath, INPUT);
+	pinMode(signalFromPi, INPUT);
 
-	// use external pull-down, unless AVR design is 3v3
-	pinMode(offButton, INPUT);
+	pinMode(signalToPi, OUTPUT);
+	digitalWrite(signalToPi, LOW);
+	
 	pinMode(loadEnable, OUTPUT);
 	digitalWrite(loadEnable, enableOFF);
-	powerState = POWER_OFF; 
 }
 
-// Typical millis() detection for flashing LED
-void heartBeat() {
-	unsigned long millisTime = millis();
+void heartBeat(unsigned long millisTime) {
 	if (millisTime - heartBeatPreviousMillis >= heartBeatInterval) {
 		heartBeatPreviousMillis = millisTime;	
 		heartBeatState = !heartBeatState;
+		digitalWrite(heartBeatLED, heartBeatState);
 	}
-	digitalWrite(heartBeatLED, heartBeatState);
 }
 
-// For printing debug
+
 void stateDebug() {
-	if (previousState != powerState) {
-		// used flashing LED more than serial, so never
-		// created a switch() statement for these
-		Serial.println(powerState);
-		previousState = powerState;
+	if (previousControllerState != controllerState) {
+		Serial.println(controllerState);
+		previousControllerState = controllerState;
 	}
 }
+
+/*int processPiSignalChange(bool piState) {
+	// save it, for some reason
+	previousPiPowerState = piPowerState;
+	if (piState)
+		return BOOTED;
+	else
+		return SHUTTING_DOWN;
+}
+
+int processPwrButtonChange(bool buttonState) {
+	pwrButtonState = previousPwrButtonState;
+	if (buttonState)
+		return CHANGED_TO_ON;
+	else
+		return CHANGED_TO_OFF;
+}*/
 
 void loop() {
-	unsigned long currentMillis = millis();
-	bool currentButtonState = digitalRead(switchSense);
-	bool currentPiSignalState = digitalRead(offButton);
+	// blink the LED
+	heartBeat(millis());
 
-	heartBeat();
-
-	// what does the sense pin look like
-	digitalWrite(switchLED, currentButtonState);
-
-	// was having trouble with Pi signal until I realized, it is floating
-	/* if (previousPiSignalState != currentPiSignalState) {
+	// check where the Pi is at
+	currentPiSignalState = digitalRead(signalFromPi);
+	if (previousPiSignalState != currentPiSignalState) {
+		// in case has some noise wait and re-sample
 		delay(10);
-		currentPiSignalState = digitalRead(offButton);
-		powerState = PISIGNAL_CHANGE;
+		currentPiSignalState = digitalRead(signalFromPi);
 		previousPiSignalState = currentPiSignalState;
-	} */
 
-	// bouncing really isn't an issue with this signal
-	currentPiSignalState = digitalRead(offButton);
-	if (currentPiSignalState)
-		powerState = SWITCH_CHANGE;
-	else
-		powerState = SWITCH_OFF;
+		//piPowerState = processPiSignalChange(currentPiSignalState);
+	} 
 
-	// monitor state of "Power" Button
-	// TODO: Add timer to detect how long it has been pressed or not-pressed
+	// how is the button doing?
+	currentButtonState = digitalRead(switchSense);
 	if (previousButtonState != currentButtonState) {
-		delay(20); // crude debounce
+		// in case of bounce, wait and re-sample
+		delay(20);
 		currentButtonState = digitalRead(switchSense);
-		powerState = SWITCH_CHANGE;
 		previousButtonState = currentButtonState;
+
+		// let the Pi know if it should be on or off
+		digitalWrite(signalToPi, currentButtonState);
+
+		if (currentButtonState == LOW) {
+			// user is forcing shutdown, so start emergency timer
+			//timerOffPreviousMillis = millis(); 
+			pinMode(offSignalPath, OUTPUT);
+			digitalWrite(offSignalPath, HIGH);
+			forcePowerOff = millis();
+		}
+
+		//pwrButtonState = processPwrButtonChange(currentButtonState);
+		//pwrButtonState = CHANGED;
 	}
 
-	switch (powerState) {
-		case POWER_OFF:
+	switch (controllerState) {
+		case POWER_UP:
 			stateDebug();
-			// if 1s has passed and we're back at power-off, then
-			// controller is trying to shutdown. 
-			if (millis() > 1000) {
-				pinMode(offSignalPath, OUTPUT);
-				digitalWrite(offSignalPath, LOW);
-			}
-			digitalWrite(loadEnable, enableOFF);
-
-			// keep heartbeat off
-			heartBeatPreviousMillis = currentMillis;
+			// disable heart beat 
+			heartBeatPreviousMillis = millis();
 			heartBeatState = false;
+
+			// should be a no brainer.
+			if (currentButtonState) {
+				//pwrButtonState = SW_ON;
+				controllerState = BOOTING_PI;
+			}	
 		break;
 
-		case SWITCH_ON:
-			stateDebug();
+		case BOOTING_PI:
+			//stateDebug();
 			heartBeatInterval = 1000;
-			heartBeatState = true;
-			
-			// go High Z while switch is in ON position
-			// testing has been done with a momentary pushbutton
-			// final design uses a SPST. code should handle both			
-			pinMode(offSignalPath, INPUT);
-			// delay(20); // make sure cap is charged before enabling big supply
+
+			// Turn on the Pi
 			digitalWrite(loadEnable, enableON);
+
+			// wait for Pi to boot
+			if (currentPiSignalState) {
+				controllerState = BOOTED;
+			}
+
+			// kill the power if the Pi never boot (or we never)
+			// get our PiAlive signal.
+			if (currentButtonState == LOW) {
+				capDrainPreviousMillis = millis();
+				digitalWrite(signalToPi, LOW);
+				controllerState = POWER_DOWN;
+			}
 		break;
 
-		case SWITCH_OFF:
-			stateDebug();
+		case BOOTED:
+			//stateDebug();
 			heartBeatInterval = 500;
 
-			// turn on hold-up signal
-			pinMode(offSignalPath, OUTPUT);
-			// TODO: measure Cap Charge Time
-			digitalWrite(offSignalPath, HIGH); 
-			powerState = TELL_PI_GO_OFF;
+			// wait for Pi signal that it is shutting down
+			if (currentPiSignalState == LOW) {
+				// Pi Initiated Shutdown
+				timerOffPreviousMillis = millis();
+				controllerState = SHUT_DOWN_PI;
+			}
+
+			if (currentButtonState == LOW) {
+				// User is telling Pi to shut down.
+				timerOffPreviousMillis = millis(); // moved to switch change
+				//forcePowerOff = millis();
+				controllerState = SHUT_DOWN_PI;
+			} else {
+				// let the swtich keep the cap up.
+				pinMode(offSignalPath, INPUT);
+			}
+
+
 		break;
 
-		case TELL_PI_GO_OFF:
-			// eventually need to send signal to Pi to initiate shutdown.
-			// that code would go here....
-			// digitalWrite(somepin, HIGH);
-
-			// for now, just tell pi to shutdown manually
-			powerState = WAIT_FOR_PI;
-			
-			// TODO: Emergency timer, shutdown after 2 minutes.
-		break;
-
-		case WAIT_FOR_PI:
-			stateDebug();
+		case SHUT_DOWN_PI:
+			//stateDebug();
 			heartBeatInterval = 250;
-			
-			// simulate pi siganl with serial
-			if (Serial.read() == '.') 
-				powerState = START_OFF_TIMER;
+			// give the Pi some time to finish up its power-down
+			if (currentPiSignalState == LOW) {
+				if (millis() - timerOffPreviousMillis >= timerOffInterval) {
+					controllerState = POWER_DOWN;
+					capDrainPreviousMillis = millis();
+				}
+			}
 
-			// may need something more complicated than this
-			if (digitalRead(offButton) == HIGH)
-				powerState = START_OFF_TIMER;
+			// or a reboot is occured
+			if (currentPiSignalState) {
+				controllerState = BOOTED;
+			}
 
-			// could also add a pushbutton, for "off" or
-			// setup a timer for holding the ON button
-		break;
-
-		/* case PISIGNAL_CHANGE:
-			if (currentPiSignalState)
-				powerState = SWITCH_CHANGE;
-			else
-				powerState = SWITCH_OFF;
-		break; */
-		
-		case SWITCH_CHANGE:
-			stateDebug();
-			if (digitalRead(switchSense))
-				powerState = SWITCH_ON;
-			else
-				powerState = SWITCH_OFF;
-		break;
-
-		case START_OFF_TIMER:
-			stateDebug();
-			heartBeatInterval = 100;
-			
-			timerOffPreviousMillis = millis();
-			powerState = COUNTING_TO_OFF;
-		    // control signal to HighZ
-			//pinMode(offSignalPath, INPUT);
-		break;
-
-		case COUNTING_TO_OFF:
-			heartBeatInterval = 50;
-			stateDebug();
-			
-			// have we sat for 15 seconds yet?
-			currentMillis = millis();
-			if (currentMillis - timerOffPreviousMillis >= timerOffInterval) {
-				powerState = SHUTDOWN;
-				
-				timerOffPreviousMillis = currentMillis;
-				capDrainPreviousMillis = currentMillis;
+			// Shutdown took way too long
+			if (millis() - forcePowerOff >= forcePowerOffInterval) {
+				controllerState = POWER_DOWN;
+				capDrainPreviousMillis = millis();
 			}
 		break;
 
-		case SHUTDOWN:
-			stateDebug();
-			heartBeatInterval = 25;
-			
-			pinMode(offSignalPath, OUTPUT);
-			digitalWrite(loadEnable, enableOFF);
-			digitalWrite(offSignalPath, LOW);
-		/*	if (currentMillis - capDrainPreviousMillis >= capDrainInterval) {
-				powerState = POWER_OFF;
-				capDrainPreviousMillis = currentMillis;
-			}*/
-		break;
+		case POWER_DOWN:
+			//stateDebug();
+			heartBeatInterval = 100;
 
-		default:
-			//Serial.println(F("uhhh, non-existant state."));
+			// let the cap drain once the switch goes off.
+			if (currentButtonState == LOW) {
+				// turn off the Pi
+				digitalWrite(loadEnable, enableOFF);
+				if (millis() - capDrainPreviousMillis >= capDrainInterval) {
+					// drain the cap
+					pinMode(offSignalPath, OUTPUT);
+					digitalWrite(offSignalPath, LOW);
+				}				
+			}
 		break;
 	}
-
 }

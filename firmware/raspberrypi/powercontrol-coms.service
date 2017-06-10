@@ -1,0 +1,20 @@
+// Put this file in /etc/systemd/system
+// then run sudo systemctl enable powercontrol-coms.service 
+// on startup, GPIO signal will go high
+// on shutdown/reboot, GPIO signal will go low
+
+[Unit]
+Description=Retropie Pi Power Controller
+Before=network.target
+After=umount.target
+#Requires=poweroff.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/c-start
+ExecStop=/usr/local/bin/c-stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+#RequiredBy=systemd-halt.service

@@ -1,26 +1,18 @@
+// install the wiringpi library on your Pi
+// And then compile this code
+// gcc c-start.c -o c-start -lwiringPi
+// copy it to /usr/local/bin
+
 #include <wiringPi.h>
 
+int ioPin = 1; // GPIO18`
+
 int main (void) {
-  wiringPiSetup();
-  pinMode (7, OUTPUT);
-  digitalWrite(7, LOW); 
-  delay(50);
-  digitalWrite(7, HIGH); 
-  delay(50);
+        wiringPiSetup ();
+        pinMode (ioPin, OUTPUT);
 
-  digitalWrite(7, LOW); 
-  delay(50);
-  digitalWrite(7, HIGH); 
-  delay(50);
-  digitalWrite(7, LOW); 
-  delay(50);
+        digitalWrite (ioPin, HIGH);
+        delay (1000);
 
-  digitalWrite(7, HIGH); 
-  delay(50);
-  digitalWrite(7, LOW); 
-  delay(50);
-  
-  digitalWrite(7, LOW); 
-  delay (500);
-  return 0 ;
+        return 0;
 }
